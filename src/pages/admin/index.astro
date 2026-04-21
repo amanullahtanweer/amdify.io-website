@@ -1,13 +1,6 @@
 ---
 import fs from 'fs';
 import path from 'path';
-
-// Block admin on production — only accessible on localhost
-const host = Astro.url.hostname;
-if (host !== 'localhost' && host !== '127.0.0.1') {
-  return Astro.redirect('/');
-}
-
 const DATA_FILE = path.join(process.cwd(), 'src/data/posts.json');
 const existingPosts = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8')) : [];
 ---
