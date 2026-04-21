@@ -17,6 +17,20 @@
     "updatedAt": "2026-04-21T16:28:32.216Z"
   },
   {
+    "slug": "speech-analytics-call-centers",
+    "title": "Speech Analytics for Call Centers: From Call Recordings to Automated QA Without a Six-Figure Platform",
+    "excerpt": "Enterprise speech analytics platforms cost $100k+. But the core capabilities — transcription, sentiment analysis, keyword spotting, and automated QA scoring — are now accessible to any contact center willing to build a lean stack.",
+    "content": "",
+    "date": "April 20, 2026",
+    "readTime": "14 min read",
+    "category": "Technology",
+    "featured": false,
+    "author": "amdify.io Team",
+    "authorRole": "Editorial",
+    "coverImage": "",
+    "createdAt": "2026-04-20T00:00:00.000Z"
+  },
+  {
     "slug": "outbound-calling-compliance-guide",
     "title": "Outbound Calling Compliance in 2026: TCPA, State Laws, and What Your Dialer Setup Must Get Right",
     "excerpt": "TCPA violations now carry penalties up to $1,500 per call. State laws have added new layers on top. Here's what every contact center running outbound campaigns needs to have in place.",
