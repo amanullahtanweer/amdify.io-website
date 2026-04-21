@@ -1,0 +1,406 @@
+---
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import fs from 'fs';
+import path from 'path';
+import { marked } from 'marked';
+
+// ── Load post ──────────────────────────────────────────
+const DATA_FILE = path.join(process.cwd(), 'src/data/posts.json');
+const allPosts = fs.existsSync(DATA_FILE)
+  ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'))
+  : [];
+
+const { slug } = Astro.params;
+const post = allPosts.find((p: any) => p.slug === slug);
+if (!post) return Astro.redirect('/blog');
+
+// ── Auto-generate TOC from markdown headings ───────────
+function extractHeadings(markdown: string) {
+  const headings: { id: string; label: string; level: number }[] = [];
+  const lines = markdown.split('\n');
+  for (const line of lines) {
+    const h2 = line.match(/^## (.+)/);
+    const h3 = line.match(/^### (.+)/);
+    const text = h2?.[1] || h3?.[1];
+    if (text) {
+      const clean = text.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+      const id = clean.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+      headings.push({ id, label: clean, level: h2 ? 2 : 3 });
+    }
+  }
+  return headings;
+}
+
+// ── Custom marked renderer (marked v9+ API) ────────────
+// In marked v9+, renderer methods receive a TOKEN OBJECT not plain text
+marked.use({
+  renderer: {
+    heading(token: any) {
+      // token = { type, raw, depth, text, tokens }
+      const text  = token.text  ?? token;           // fallback for older versions
+      const level = token.depth ?? arguments[1];
+      const clean = String(text).replace(/\*\*/g, '').replace(/\*/g, '').trim();
+      const id    = clean.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+
+      if (level === 2 || level === 3) {
+        return `<div id="${id}" class="section-anchor"></div><h${level}>${clean}</h${level}>`;
+      }
+      return `<h${level}>${clean}</h${level}>`;
+    }
+  }
+});
+
+const htmlContent = marked(post.content || '');
+const toc = extractHeadings(post.content || '');
+
+// ── Related posts ──────────────────────────────────────
+const related = allPosts
+  .filter((p: any) => p.slug !== post.slug && p.category === post.category)
+  .slice(0, 3);
+
+const categoryColors: Record<string, string> = {
+  Industry:   'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  Technology: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+  Guides:     'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+};
+const categoryStripe: Record<string, string> = {
+  Industry:   'from-rose-600/50 to-rose-400/30',
+  Technology: 'from-indigo-600/50 to-indigo-400/30',
+  Guides:     'from-emerald-600/50 to-emerald-400/30',
+};
+---
+
+<Layout 
+  title={post.seoTitle || post.title}
+  description={post.seoDescription || post.excerpt}
+>
+  <!-- Reading progress bar -->
+  <div class="fixed top-0 left-0 right-0 z-[60] h-0.5 bg-neutral-900 pointer-events-none">
+    <div id="read-progress" class="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 transition-[width] duration-75" style="width:0%"></div>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3">
+        <img src="/logo.svg" alt="amdify.io" class="h-9 w-9 invert" />
+        <span class="text-xl font-bold tracking-tight text-white">amdify<span class="text-indigo-400">.io</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="/#features"     class="text-sm text-neutral-400 hover:text-white transition-colors">Features</a>
+        <a href="/#how-it-works" class="text-sm text-neutral-400 hover:text-white transition-colors">How It Works</a>
+        <a href="/#pricing"      class="text-sm text-neutral-400 hover:text-white transition-colors">Pricing</a>
+        <a href="/blog"          class="text-sm text-neutral-400 hover:text-white transition-colors">Blog</a>
+        <a href="/#faq"          class="text-sm text-neutral-400 hover:text-white transition-colors">FAQ</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="https://monitor.amdify.io" class="hidden sm:inline-flex text-sm text-neutral-300 hover:text-white px-4 py-2">Sign In</a>
+        <a href="/#pricing" class="inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-all">
+          Get Started
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        </a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden text-neutral-400 hover:text-white p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-neutral-800 bg-neutral-950/95 backdrop-blur-xl">
+      <div class="px-6 py-4 flex flex-col gap-3">
+        <a href="/#features"     class="text-sm text-neutral-400 hover:text-white py-2">Features</a>
+        <a href="/#how-it-works" class="text-sm text-neutral-400 hover:text-white py-2">How It Works</a>
+        <a href="/#pricing"      class="text-sm text-neutral-400 hover:text-white py-2">Pricing</a>
+        <a href="/blog"          class="text-sm text-white font-medium py-2">Blog</a>
+        <a href="/#faq"          class="text-sm text-neutral-400 hover:text-white py-2">FAQ</a>
+        <a href="https://monitor.amdify.io" class="text-sm text-neutral-400 hover:text-white py-2">Sign In</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO HEADER -->
+  <section class="relative pt-32 pb-0 overflow-hidden">
+    <div class="absolute inset-0">
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-500/5 rounded-full blur-[140px]"></div>
+      <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.012)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-6">
+      <!-- Breadcrumb -->
+      <div class="flex items-center gap-2 text-sm text-neutral-500 mb-10 flex-wrap">
+        <a href="/" class="hover:text-neutral-300 transition-colors">Home</a>
+        <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <a href="/blog" class="hover:text-neutral-300 transition-colors">Blog</a>
+        <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-neutral-400 truncate max-w-[220px]">{post.title}</span>
+      </div>
+
+      <!-- Category + meta -->
+      <div class="flex items-center gap-3 flex-wrap mb-7">
+        <span class={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border ${categoryColors[post.category] || 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}`}>
+          <span class="w-1.5 h-1.5 rounded-full bg-current"></span>{post.category}
+        </span>
+        <span class="text-xs text-neutral-500" id="post-date" data-date={post.createdAt}>{post.date}</span>
+        <span class="text-neutral-700">·</span>
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight leading-[1.2] mb-7 text-white max-w-4xl">{post.title}</h1>
+
+      <!-- Excerpt -->
+      <p class="text-lg text-neutral-400 leading-relaxed max-w-3xl mb-10">{post.excerpt}</p>
+
+      <!-- Author + share -->
+      <div class="flex items-center justify-between gap-4 pb-8 border-b border-neutral-800/60 max-w-4xl flex-wrap">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 rounded-full flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-white">{post.author}</p>
+            <p class="text-xs text-neutral-500">{post.authorRole}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="copy-link-btn" class="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-500 hover:text-white hover:border-neutral-600 transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+          <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent('https://amdify.io/blog/'+post.slug)}`} target="_blank"
+             class="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-500 hover:text-white hover:border-neutral-600 transition-all">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      {post.coverImage && (
+        <div class="max-w-4xl mt-8 rounded-2xl overflow-hidden border border-neutral-800 aspect-[2/1]">
+          <img src={post.coverImage} alt={post.title} class="w-full h-full object-cover" />
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- CONTENT + TOC -->
+  <div class="max-w-7xl mx-auto px-6 py-12">
+    <div class="flex gap-12 xl:gap-16 items-start">
+
+      <!-- ARTICLE -->
+      <article class="flex-1 min-w-0 max-w-3xl article-body">
+        <div set:html={htmlContent} />
+      </article>
+
+      <!-- STICKY TOC -->
+      <aside class="hidden lg:block w-60 xl:w-64 shrink-0">
+        <div class="sticky top-28 space-y-4">
+
+          {toc.length > 0 && (
+            <div class="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5">
+              <p class="text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-4">Table of Contents</p>
+              <nav id="toc-nav" class="space-y-0.5">
+                {toc.map((item, i) => (
+                  <a href={`#${item.id}`}
+                     class={`toc-link flex items-start gap-2.5 py-2 text-sm text-neutral-500 hover:text-neutral-200 transition-colors group ${item.level === 3 ? 'pl-4' : ''}`}
+                     data-target={item.id}>
+                    {item.level === 2 && (
+                      <span class="toc-num text-xs font-mono text-neutral-700 group-hover:text-indigo-400 transition-colors mt-0.5 shrink-0 w-5">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                    )}
+                    {item.level === 3 && (
+                      <span class="text-neutral-700 mt-1.5 shrink-0">
+                        <svg class="w-2 h-2" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="2"/></svg>
+                      </span>
+                    )}
+                    <span class="toc-text leading-snug">{item.label}</span>
+                  </a>
+                ))}
+              </nav>
+            </div>
+          )}
+
+          <div class="bg-neutral-900/40 border border-neutral-800/60 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs text-neutral-600">Reading progress</span>
+              <span id="progress-pct" class="text-xs font-mono text-indigo-400">0%</span>
+            </div>
+            <div class="h-1 bg-neutral-800 rounded-full overflow-hidden">
+              <div id="toc-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-150" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-br from-indigo-500/10 to-violet-500/5 border border-indigo-500/20 rounded-xl p-5">
+            <p class="text-xs font-semibold text-indigo-300 mb-1">Improve your connect rates</p>
+            <p class="text-xs text-neutral-500 leading-relaxed mb-4">High-accuracy AMD is the foundation of clean call data.</p>
+            <a href="/#pricing" class="block text-center text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 rounded-lg transition-all">
+              Try amdify.io Free →
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- BACK / CTA -->
+  <div class="max-w-3xl mx-auto px-6 pb-16">
+    <div class="border-t border-neutral-800/60 pt-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <a href="/blog" class="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors group">
+        <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+        Back to Blog
+      </a>
+      <a href="/#pricing" class="inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-indigo-500/20">
+        Try amdify.io Free
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- RELATED POSTS -->
+  {related.length > 0 && (
+    <section class="border-t border-neutral-800/50 py-20">
+      <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-xl font-bold text-white mb-8">More from {post.category}</h2>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {related.map((rel: any) => (
+            <a href={`/blog/${rel.slug}`} class="group bg-neutral-900/50 border border-neutral-800 rounded-2xl overflow-hidden hover:border-indigo-500/25 transition-all flex flex-col">
+              <div class={`h-1 w-full bg-gradient-to-r ${categoryStripe[rel.category] || 'from-indigo-600/50 to-indigo-400/30'}`}></div>
+              <div class="p-6 flex flex-col flex-1">
+                <div class="flex items-center justify-between mb-4">
+                  <span class={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${categoryColors[rel.category] || 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}`}>
+                    <span class="w-1.5 h-1.5 rounded-full bg-current"></span>{rel.category}
+                  </span>
+                  <span class="text-xs text-neutral-600">{rel.readTime}</span>
+                </div>
+                <h3 class="text-sm font-semibold text-white leading-snug mb-3 group-hover:text-indigo-100 transition-colors flex-1">{rel.title}</h3>
+                <div class="flex items-center justify-between pt-4 border-t border-neutral-800/70">
+                  <span class="text-xs text-neutral-600">{rel.date}</span>
+                  <span class="inline-flex items-center gap-1 text-xs font-medium text-indigo-400">Read <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg></span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- FOOTER -->
+  <footer class="border-t border-neutral-800/50 py-16">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+        <div class="sm:col-span-2 lg:col-span-1">
+          <a href="/" class="flex items-center gap-3 mb-4">
+            <img src="/logo.svg" alt="amdify.io" class="h-8 w-8 invert" />
+            <span class="text-lg font-bold text-white">amdify<span class="text-indigo-400">.io</span></span>
+          </a>
+          <p class="text-sm text-neutral-500 leading-relaxed mb-4">AI-powered answering machine detection for modern contact centers.</p>
+          <p class="text-sm text-neutral-600">&copy; 2026 amdify.io. All rights reserved.</p>
+        </div>
+        <div><h4 class="text-sm font-semibold text-white mb-4">Product</h4><ul class="space-y-3"><li><a href="/#features" class="text-sm text-neutral-500 hover:text-neutral-300 transition-colors">Features</a></li><li><a href="/#pricing" class="text-sm text-neutral-500 hover:text-neutral-300 transition-colors">Pricing</a></li></ul></div>
+        <div><h4 class="text-sm font-semibold text-white mb-4">Company</h4><ul class="space-y-3"><li><a href="/blog" class="text-sm text-neutral-300">Blog</a></li><li><a href="mailto:hello@amdify.io" class="text-sm text-neutral-500 hover:text-neutral-300 transition-colors">Contact</a></li></ul></div>
+        <div><h4 class="text-sm font-semibold text-white mb-4">Legal</h4><ul class="space-y-3"><li><a href="#" class="text-sm text-neutral-500 hover:text-neutral-300 transition-colors">Privacy Policy</a></li></ul></div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const dateEl = document.getElementById('post-date');
+        if (dateEl?.dataset.date) {
+          const diff = Date.now() - new Date(dateEl.dataset.date).getTime();
+          const days = Math.floor(diff / 86400000);
+          const hours = Math.floor(diff / 3600000);
+          const mins = Math.floor(diff / 60000);
+          if (mins < 1) dateEl.textContent = 'Just now';
+          else if (mins < 60) dateEl.textContent = `${mins} minute${mins>1?'s':''} ago`;
+          else if (hours < 24) dateEl.textContent = `${hours} hour${hours>1?'s':''} ago`;
+          else if (days < 7)  dateEl.textContent = `${days} day${days>1?'s':''} ago`;
+          else if (days < 30) dateEl.textContent = `${Math.floor(days/7)} week${Math.floor(days/7)>1?'s':''} ago`;
+          else dateEl.textContent = `${Math.floor(days/30)} month${Math.floor(days/30)>1?'s':''} ago`;
+}
+
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar?.classList.toggle('bg-neutral-950/80', window.scrollY > 20);
+      navbar?.classList.toggle('backdrop-blur-xl', window.scrollY > 20);
+      navbar?.classList.toggle('border-b', window.scrollY > 20);
+      navbar?.classList.toggle('border-neutral-800/50', window.scrollY > 20);
+    });
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+      document.getElementById('mobile-menu')?.classList.toggle('hidden');
+    });
+    document.getElementById('copy-link-btn')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        const btn = document.getElementById('copy-link-btn');
+        if (!btn) return;
+        btn.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+        setTimeout(() => { btn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>`; }, 2000);
+      });
+    });
+
+    const article = document.querySelector('article');
+    const sections = document.querySelectorAll<HTMLElement>('.section-anchor');
+    const tocLinks = document.querySelectorAll<HTMLElement>('.toc-link');
+
+    function updateProgress() {
+      if (!article) return;
+      const { top, height } = article.getBoundingClientRect();
+      const pct = Math.round(Math.max(0, Math.min(1, -top / (height - window.innerHeight))) * 100);
+      const bar = document.getElementById('read-progress');
+      const tocBar = document.getElementById('toc-progress-bar');
+      const pctEl = document.getElementById('progress-pct');
+      if (bar) bar.style.width = `${pct}%`;
+      if (tocBar) tocBar.style.width = `${pct}%`;
+      if (pctEl) pctEl.textContent = `${pct}%`;
+    }
+
+    function updateActiveToc() {
+      let current = '';
+      sections.forEach(s => { if (s.getBoundingClientRect().top <= 130) current = s.id; });
+      tocLinks.forEach(link => {
+        const active = link.dataset.target === current;
+        link.classList.toggle('text-indigo-300', active);
+        link.classList.toggle('text-neutral-500', !active);
+        const num = link.querySelector('.toc-num');
+        if (num) { num.classList.toggle('text-indigo-400', active); num.classList.toggle('text-neutral-700', !active); }
+      });
+    }
+
+    window.addEventListener('scroll', () => { updateProgress(); updateActiveToc(); }, { passive: true });
+
+    tocLinks.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.getElementById(link.dataset.target || '');
+        if (target) window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' });
+      });
+    });
+  </script>
+
+  <style is:global>
+    .article-body { color: #a3a3a3; font-size: 1.0625rem; line-height: 1.875; }
+    .article-body p  { margin-bottom: 1.5rem; }
+    .article-body h2 { font-size: 1.5rem; font-weight: 700; color: #fff; margin-top: 3rem; margin-bottom: 1.25rem; letter-spacing: -.025em; line-height: 1.3; border-top: 1px solid rgba(255,255,255,.06); padding-top: 2rem; }
+    .article-body h3 { font-size: 1.125rem; font-weight: 600; color: #e5e5e5; margin-top: 2rem; margin-bottom: .875rem; }
+    .article-body h4 { font-size: 1rem; font-weight: 600; color: #e5e5e5; margin-bottom: .5rem; margin-top: 1.5rem; }
+    .article-body a  { color: #818cf8; text-decoration: underline; text-underline-offset: 3px; }
+    .article-body strong { color: #e5e5e5; font-weight: 600; }
+    .article-body em { color: #d4d4d4; }
+    .article-body ul { list-style: none; padding: 0; margin-bottom: 1.5rem; }
+    .article-body ul li { position: relative; padding-left: 1.5rem; margin-bottom: .625rem; }
+    .article-body ul li::before { content: ''; position: absolute; left: 0; top: .65em; width: 5px; height: 5px; border-radius: 50%; background: #6366f1; }
+    .article-body ol { counter-reset: ol; padding: 0; margin-bottom: 1.5rem; }
+    .article-body ol li { counter-increment: ol; position: relative; padding-left: 2.25rem; margin-bottom: .625rem; }
+    .article-body ol li::before { content: counter(ol); position: absolute; left: 0; top: 0; width: 1.5rem; height: 1.5rem; background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.2); border-radius: .375rem; font-size: .7rem; font-weight: 700; color: #818cf8; display: flex; align-items: center; justify-content: center; }
+    .article-body blockquote { border-left: 3px solid rgba(99,102,241,.6); padding: 1rem 1.5rem; margin: 2rem 0; background: rgba(99,102,241,.05); border-radius: 0 1rem 1rem 0; color: #d4d4d4; font-style: italic; }
+    .article-body code { background: rgba(99,102,241,.1); border: 1px solid rgba(99,102,241,.2); border-radius: 5px; padding: .15em .45em; font-size: .875em; color: #a5b4fc; font-family: monospace; }
+    .article-body pre  { background: #0d1117; border: 1px solid #262d37; border-radius: .875rem; padding: 1.25rem 1.5rem; overflow-x: auto; margin-bottom: 1.75rem; }
+    .article-body pre code { background: none; border: none; padding: 0; color: #e6edf3; font-size: .875rem; }
+    .article-body table { width: 100%; border-collapse: collapse; margin-bottom: 1.75rem; font-size: .9rem; border: 1px solid #1f2937; border-radius: .75rem; overflow: hidden; }
+    .article-body th { text-align: left; color: #e5e5e5; font-weight: 600; padding: .75rem 1rem; border-bottom: 1px solid #404040; background: rgba(15,23,42,.9); }
+    .article-body td { padding: .75rem 1rem; border-bottom: 1px solid #1f2937; color: #a3a3a3; }
+    .article-body tr:last-child td { border-bottom: none; }
+    .article-body tr:nth-child(even) td { background: rgba(15,23,42,.3); }
+    .article-body hr { border: none; border-top: 1px solid #1f2937; margin: 2.5rem 0; }
+    .article-body img { border-radius: .875rem; border: 1px solid #1f2937; width: 100%; }
+    .section-anchor { position: relative; top: -100px; visibility: hidden; pointer-events: none; display: block; }
+    .toc-link { border-left: 2px solid transparent; padding-left: .75rem; margin-left: -.75rem; transition: border-color .2s, color .2s; }
+    .toc-link.text-indigo-300 { border-left-color: #818cf8; }
+  </style>
+</Layout>
