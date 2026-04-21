@@ -402,5 +402,53 @@ const categoryStripe: Record<string, string> = {
     .section-anchor { position: relative; top: -100px; visibility: hidden; pointer-events: none; display: block; }
     .toc-link { border-left: 2px solid transparent; padding-left: .75rem; margin-left: -.75rem; transition: border-color .2s, color .2s; }
     .toc-link.text-indigo-300 { border-left-color: #818cf8; }
+
+    /* ── Feature cards grid ── */
+    .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .875rem; margin: 1.75rem 0; }
+    @media (max-width: 640px) { .feature-grid { grid-template-columns: 1fr; } }
+    .feature-card { background: rgba(15,23,42,.8); border: 1px solid #1f2937; border-radius: 1rem; padding: 1.25rem; transition: border-color .2s; }
+    .feature-card:hover { border-color: rgba(99,102,241,.3); }
+    .feature-icon { font-size: .7rem; font-weight: 700; color: #6366f1; font-family: monospace; letter-spacing: .05em; margin-bottom: .625rem; background: rgba(99,102,241,.1); display: inline-block; padding: .2rem .6rem; border-radius: .375rem; }
+    .feature-card h4 { font-size: .9375rem; font-weight: 600; color: #e5e5e5; margin-bottom: .375rem; margin-top: 0; }
+    .feature-card p { font-size: .8125rem; color: #6b7280; line-height: 1.6; margin: 0; }
+
+    /* ── Comparison table ── */
+    .comparison-table { border: 1px solid #1f2937; border-radius: 1rem; overflow: hidden; margin: 1.75rem 0; font-size: .875rem; }
+    .comparison-header, .comparison-row { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+    .comparison-header { background: rgba(15,23,42,.9); border-bottom: 1px solid #1f2937; padding: .75rem 1rem; }
+    .comparison-header .col-enterprise { color: #6b7280; font-weight: 600; text-align: center; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+    .comparison-header .col-lean { color: #818cf8; font-weight: 600; text-align: center; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+    .comparison-row { padding: .875rem 1rem; border-bottom: 1px solid rgba(31,41,55,.5); align-items: center; }
+    .comparison-row:last-child { border-bottom: none; }
+    .comparison-row:nth-child(even) { background: rgba(15,23,42,.3); }
+    .col-label { color: #d4d4d4; font-size: .8125rem; }
+    .col-enterprise { color: #6b7280; text-align: center; font-size: .8125rem; }
+    .col-lean { text-align: center; font-size: .8125rem; }
+
+    /* ── Stack diagram ── */
+    .stack-diagram { margin: 1.75rem 0; }
+    .stack-layer { background: rgba(15,23,42,.7); border: 1px solid #1f2937; border-radius: .875rem; padding: 1rem 1.25rem; }
+    .stack-layer:hover { border-color: rgba(99,102,241,.25); }
+    .stack-label { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #6366f1; margin-bottom: .75rem; }
+    .stack-item { display: flex; align-items: baseline; gap: 1rem; margin-bottom: .5rem; }
+    .stack-item:last-child { margin-bottom: 0; }
+    .stack-name { font-size: .875rem; font-weight: 600; color: #e5e5e5; white-space: nowrap; }
+    .stack-detail { font-size: .8rem; color: #6b7280; }
+    .stack-arrow { text-align: center; color: rgba(99,102,241,.4); font-size: 1.25rem; margin: .375rem 0; }
+
+    /* ── Callout box ── */
+    .callout-box { display: flex; gap: 1rem; background: rgba(99,102,241,.06); border: 1px solid rgba(99,102,241,.2); border-radius: 1rem; padding: 1.25rem; margin: 2rem 0; }
+    .callout-icon { color: #818cf8; flex-shrink: 0; margin-top: .125rem; }
+    .callout-title { font-size: .9375rem; font-weight: 600; color: #e5e5e5; margin-bottom: .375rem; }
+    .callout-text { font-size: .875rem; color: #9ca3af; line-height: 1.65; margin: 0; }
+
+    /* ── Timeline ── */
+    .timeline { margin: 1.75rem 0; position: relative; padding-left: 1.5rem; }
+    .timeline::before { content: ''; position: absolute; left: 0; top: .75rem; bottom: .75rem; width: 2px; background: linear-gradient(to bottom, rgba(99,102,241,.5), rgba(139,92,246,.3)); border-radius: 1px; }
+    .timeline-item { position: relative; margin-bottom: 1.75rem; padding-left: 1.5rem; }
+    .timeline-item::before { content: ''; position: absolute; left: -1.5rem; top: .625rem; width: .625rem; height: .625rem; background: #6366f1; border-radius: 50%; box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+    .timeline-marker { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #6366f1; margin-bottom: .375rem; }
+    .timeline-content h4 { font-size: .9375rem; font-weight: 600; color: #e5e5e5; margin-bottom: .375rem; margin-top: 0; }
+    .timeline-content p { font-size: .875rem; color: #6b7280; line-height: 1.65; margin: 0; }
   </style>
 </Layout>
