@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import fs from 'fs';
 import path from 'path';
+import { getPostHogServer } from '../../../lib/posthog-server';
 
 const DATA_FILE = path.join(process.cwd(), 'src/data/posts.json');
 
@@ -13,10 +14,11 @@ function writePosts(posts: any[]) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(posts, null, 2));
 }
 
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
   try {
     const { slug } = params;
     const posts = readPosts();
+    const deletedPost = posts.find((p: any) => p.slug === slug);
     const filtered = posts.filter((p: any) => p.slug !== slug);
     if (filtered.length === posts.length) {
       return new Response(JSON.stringify({ error: 'Post not found' }), {
@@ -24,6 +26,21 @@ export const DELETE: APIRoute = async ({ params }) => {
       });
     }
     writePosts(filtered);
+
+    // PostHog: track post deletion server-side
+    const sessionId = request.headers.get('X-PostHog-Session-Id');
+    const posthog = getPostHogServer();
+    posthog.capture({
+      distinctId: 'admin',
+      event: 'post_deleted',
+      properties: {
+        $session_id: sessionId || undefined,
+        post_slug: slug,
+        post_title: deletedPost?.title,
+        post_category: deletedPost?.category,
+      },
+    });
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { 'Content-Type': 'application/json' }
     });
@@ -92,6 +109,22 @@ export const PUT: APIRoute = async ({ params, request }) => {
     }
 
     writePosts(posts);
+
+    // PostHog: track post update server-side
+    const sessionId = request.headers.get('X-PostHog-Session-Id');
+    const posthog = getPostHogServer();
+    posthog.capture({
+      distinctId: 'admin',
+      event: 'post_updated',
+      properties: {
+        $session_id: sessionId || undefined,
+        post_slug: updated.slug,
+        post_title: updated.title,
+        post_category: updated.category,
+        slug_changed: newSlug !== slug,
+      },
+    });
+
     return new Response(JSON.stringify(updated), {
       headers: { 'Content-Type': 'application/json' }
     });

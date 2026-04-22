@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import fs from 'fs';
 import path from 'path';
+import { getPostHogServer } from '../../lib/posthog-server';
 
 const DATA_FILE = path.join(process.cwd(), 'src/data/posts.json');
 
@@ -89,6 +90,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     posts.unshift(newPost);
     writePosts(posts);
+
+    // PostHog: track post creation server-side
+    const sessionId = request.headers.get('X-PostHog-Session-Id');
+    const posthog = getPostHogServer();
+    posthog.capture({
+      distinctId: 'admin',
+      event: 'post_created',
+      properties: {
+        $session_id: sessionId || undefined,
+        post_slug: newPost.slug,
+        post_title: newPost.title,
+        post_category: newPost.category,
+        post_featured: newPost.featured,
+      },
+    });
 
     return new Response(JSON.stringify(newPost), {
       status: 201,
