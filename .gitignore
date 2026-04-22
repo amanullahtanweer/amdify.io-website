@@ -1,7 +1,11 @@
 # build output
 dist/
+.vercel/
 # generated types
 .astro/
+# claude internal
+.claude/
+posthog-setup-report.md
 
 # dependencies
 node_modules/
