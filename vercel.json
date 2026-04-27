@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "amdify.io" }],
+      "destination": "https://www.amdify.io/$1",
+      "permanent": true
+    }
+  ]
+}
