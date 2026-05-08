@@ -45,7 +45,14 @@ const {
       }
     </style>
     <title>{title}</title>
-    <!-- GA4 is loaded via GTM — no separate gtag.js needed -->
+    <!-- Google Analytics 4 -->
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-MFWQYJQVFB"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-MFWQYJQVFB');
+    </script>
     <PostHog />
   </head>
   <body class="min-h-screen">
