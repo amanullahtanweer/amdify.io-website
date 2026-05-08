@@ -11,6 +11,8 @@ const allPosts = fs.existsSync(DATA_FILE)
 const featured = allPosts.find((p: any) => p.featured);
 const rest = allPosts.filter((p: any) => !p.featured);
 
+const POSTS_PER_PAGE = 6;
+
 const categoryColors: Record<string, string> = {
   Industry:   'bg-rose-500/10 text-rose-400 border-rose-500/20',
   Technology: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
@@ -125,8 +127,9 @@ const categoryStripe: Record<string, string> = {
             </div>
             <div class="p-8 lg:p-12 flex flex-col justify-center">
               <div class="flex items-center gap-3 mb-5">
-<span class="text-xs text-neutral-500 rel-date" data-date={featured.createdAt}>{featured.date}</span>                <span class="text-neutral-700">·</span>
-<span class="text-xs text-neutral-500" id="post-date" data-date={featured.createdAt}>{featured.date}</span>
+                <span class="text-xs text-neutral-500 rel-date" data-date={featured.createdAt}>{featured.date}</span>
+                <span class="text-neutral-700">·</span>
+                <span class="text-xs text-neutral-500">{featured.readTime}</span>
               </div>
               <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight group-hover:text-indigo-100 transition-colors">{featured.title}</h2>
               <p class="text-neutral-400 leading-relaxed mb-8">{featured.excerpt}</p>
@@ -154,21 +157,21 @@ const categoryStripe: Record<string, string> = {
             {cat}
           </button>
         ))}
-        <span class="ml-auto text-xs text-neutral-500 hidden sm:block">{allPosts.length} article{allPosts.length!==1?'s':''}</span>
+        <span id="post-count" class="ml-auto text-xs text-neutral-500 hidden sm:block">{rest.length} article{rest.length!==1?'s':''}</span>
       </div>
     </div>
   </section>
 
   <!-- GRID -->
-  <section class="pb-24">
+  <section class="pb-12">
     <div class="max-w-7xl mx-auto px-6">
-      {allPosts.length === 0 ? (
+      {rest.length === 0 ? (
         <div class="text-center py-28 border border-dashed border-neutral-800 rounded-2xl">
           <div class="w-16 h-16 bg-neutral-900 border border-neutral-800 rounded-2xl flex items-center justify-center mx-auto mb-5">
             <svg class="w-7 h-7 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           </div>
           <p class="text-white font-medium mb-2">No posts yet</p>
-          <p class="text-neutral-500 text-sm">Go to <a href="/admin" class="text-indigo-400 hover:underline">/admin</a> to write your first post.</p>
+          <p class="text-neutral-500 text-sm">Check back soon for new articles.</p>
         </div>
       ) : (
         <div id="posts-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -178,13 +181,7 @@ const categoryStripe: Record<string, string> = {
               class="post-card group relative bg-neutral-900/50 border border-neutral-800 rounded-2xl overflow-hidden hover:border-indigo-500/25 transition-all duration-300 flex flex-col"
               data-category={post.category}
             >
-              {post.coverImage ? (
-                <div class="h-44 overflow-hidden">
-                  <img src={post.coverImage} alt={post.title} class="w-full h-full object-cover opacity-70 group-hover:opacity-90 group-hover:scale-105 transition-all duration-500" />
-                </div>
-              ) : (
-                <div class={`h-1 w-full bg-gradient-to-r ${categoryStripe[post.category]}`}></div>
-              )}
+              <div class={`h-1 w-full bg-gradient-to-r ${categoryStripe[post.category]}`}></div>
               <div class="absolute inset-0 bg-gradient-to-b from-indigo-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               <div class="relative p-7 flex flex-col flex-1">
                 <div class="flex items-center justify-between mb-5">
@@ -206,9 +203,18 @@ const categoryStripe: Record<string, string> = {
           ))}
         </div>
       )}
+
+      <!-- EMPTY FILTER STATE -->
       <div id="empty-filter-state" class="hidden text-center py-20">
         <p class="text-neutral-400 text-sm">No articles in this category yet.</p>
       </div>
+    </div>
+  </section>
+
+  <!-- PAGINATION -->
+  <section id="pagination-section" class="pb-24">
+    <div class="max-w-7xl mx-auto px-6">
+      <div id="pagination" class="flex items-center justify-center gap-2"></div>
     </div>
   </section>
 
@@ -251,29 +257,30 @@ const categoryStripe: Record<string, string> = {
     </div>
   </footer>
 
-  <script>
+  <script define:vars={{ POSTS_PER_PAGE }}>
+    // ── Relative time ──────────────────────────────────────────────
     function relativeTime(iso) {
-  if (!iso) return '';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days  = Math.floor(diff / 86400000);
-  const weeks = Math.floor(days / 7);
-  const months= Math.floor(days / 30);
-  if (mins < 1)    return 'Just now';
-  if (mins < 60)   return `${mins} minute${mins>1?'s':''} ago`;
-  if (hours < 24)  return `${hours} hour${hours>1?'s':''} ago`;
-  if (days < 7)    return `${days} day${days>1?'s':''} ago`;
-  if (weeks < 5)   return `${weeks} week${weeks>1?'s':''} ago`;
-  if (months < 12) return `${months} month${months>1?'s':''} ago`;
-  return `${Math.floor(months/12)} year${Math.floor(months/12)>1?'s':''} ago`;
-}
+      if (!iso) return '';
+      const diff = Date.now() - new Date(iso).getTime();
+      const mins  = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days  = Math.floor(diff / 86400000);
+      const weeks = Math.floor(days / 7);
+      const months = Math.floor(days / 30);
+      if (mins < 1)    return 'Just now';
+      if (mins < 60)   return `${mins} minute${mins>1?'s':''} ago`;
+      if (hours < 24)  return `${hours} hour${hours>1?'s':''} ago`;
+      if (days < 7)    return `${days} day${days>1?'s':''} ago`;
+      if (weeks < 5)   return `${weeks} week${weeks>1?'s':''} ago`;
+      if (months < 12) return `${months} month${months>1?'s':''} ago`;
+      return `${Math.floor(months/12)} year${Math.floor(months/12)>1?'s':''} ago`;
+    }
+    document.querySelectorAll('.rel-date').forEach(el => {
+      const t = relativeTime(el.dataset.date);
+      if (t) el.textContent = t;
+    });
 
-document.querySelectorAll('.rel-date').forEach(el => {
-  const t = relativeTime(el.dataset.date);
-  if (t) el.textContent = t;
-});
-
+    // ── Navbar scroll ──────────────────────────────────────────────
     const navbar = document.getElementById('navbar');
     window.addEventListener('scroll', () => {
       navbar?.classList.toggle('bg-neutral-950/80', window.scrollY > 20);
@@ -284,47 +291,177 @@ document.querySelectorAll('.rel-date').forEach(el => {
     document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
       document.getElementById('mobile-menu')?.classList.toggle('hidden');
     });
-    const filterBtns = document.querySelectorAll<HTMLButtonElement>('.filter-btn');
-    const postCards = document.querySelectorAll<HTMLElement>('.post-card');
+
+    // ── Pagination + Filter ────────────────────────────────────────
+    const allCards = Array.from(document.querySelectorAll('.post-card'));
+    let currentFilter = 'All';
+    let currentPage   = 1;
+
+    function getFilteredCards() {
+      if (currentFilter === 'All') return allCards;
+      return allCards.filter(c => c.dataset.category === currentFilter);
+    }
+
+    function renderPage() {
+      const filtered   = getFilteredCards();
+      const totalPages = Math.ceil(filtered.length / POSTS_PER_PAGE);
+      const start      = (currentPage - 1) * POSTS_PER_PAGE;
+      const end        = start + POSTS_PER_PAGE;
+
+      // Show/hide cards
+      allCards.forEach(c => {
+        c.style.display = 'none';
+        c.classList.remove('anim-in');
+      });
+      const pageCards = filtered.slice(start, end);
+      pageCards.forEach((c, i) => {
+        c.style.display = '';
+        // stagger animation
+        setTimeout(() => c.classList.add('anim-in'), i * 60);
+      });
+
+      // Update count
+      const countEl = document.getElementById('post-count');
+      if (countEl) {
+        const total = filtered.length;
+        countEl.textContent = `${total} article${total !== 1 ? 's' : ''}`;
+      }
+
+      // Empty state
+      const empty = document.getElementById('empty-filter-state');
+      if (empty) empty.classList.toggle('hidden', filtered.length > 0);
+
+      // Render pagination
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+      const container = document.getElementById('pagination');
+      const section   = document.getElementById('pagination-section');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      if (totalPages <= 1) {
+        if (section) section.style.display = 'none';
+        return;
+      }
+      if (section) section.style.display = '';
+
+      // Prev button
+      const prev = document.createElement('button');
+      prev.className = `pagination-btn flex items-center gap-1.5 px-4 py-2 rounded-lg border text-sm font-medium transition-all
+        ${currentPage === 1
+          ? 'border-neutral-800 text-neutral-600 cursor-not-allowed opacity-40'
+          : 'border-neutral-700 text-neutral-300 hover:border-indigo-500/50 hover:text-white'}`;
+      prev.disabled = currentPage === 1;
+      prev.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg> Prev`;
+      prev.addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; renderPage(); scrollToGrid(); }
+      });
+      container.appendChild(prev);
+
+      // Page numbers with ellipsis
+      const pages = buildPageRange(currentPage, totalPages);
+      pages.forEach(p => {
+        if (p === '…') {
+          const dot = document.createElement('span');
+          dot.className = 'text-neutral-600 px-1 select-none';
+          dot.textContent = '…';
+          container.appendChild(dot);
+          return;
+        }
+        const btn = document.createElement('button');
+        btn.className = `pagination-btn w-10 h-10 rounded-lg border text-sm font-medium transition-all
+          ${p === currentPage
+            ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/25'
+            : 'border-neutral-800 text-neutral-400 hover:border-indigo-500/40 hover:text-white'}`;
+        btn.textContent = String(p);
+        btn.addEventListener('click', () => {
+          currentPage = p;
+          renderPage();
+          scrollToGrid();
+        });
+        container.appendChild(btn);
+      });
+
+      // Next button
+      const next = document.createElement('button');
+      next.className = `pagination-btn flex items-center gap-1.5 px-4 py-2 rounded-lg border text-sm font-medium transition-all
+        ${currentPage === totalPages
+          ? 'border-neutral-800 text-neutral-600 cursor-not-allowed opacity-40'
+          : 'border-neutral-700 text-neutral-300 hover:border-indigo-500/50 hover:text-white'}`;
+      next.disabled = currentPage === totalPages;
+      next.innerHTML = `Next <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>`;
+      next.addEventListener('click', () => {
+        if (currentPage < totalPages) { currentPage++; renderPage(); scrollToGrid(); }
+      });
+      container.appendChild(next);
+    }
+
+    function buildPageRange(current, total) {
+      if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+      const pages = [];
+      if (current <= 4) {
+        for (let i = 1; i <= 5; i++) pages.push(i);
+        pages.push('…');
+        pages.push(total);
+      } else if (current >= total - 3) {
+        pages.push(1);
+        pages.push('…');
+        for (let i = total - 4; i <= total; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('…');
+        pages.push(current - 1, current, current + 1);
+        pages.push('…');
+        pages.push(total);
+      }
+      return pages;
+    }
+
+    function scrollToGrid() {
+      const grid = document.getElementById('posts-grid');
+      if (grid) {
+        const top = grid.getBoundingClientRect().top + window.scrollY - 120;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    }
+
+    // ── Filter buttons ──────────────────────────────────────────────
+    const filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        const filter = btn.dataset.filter;
+        currentFilter = btn.dataset.filter;
+        currentPage   = 1;
+
         filterBtns.forEach(b => {
           b.classList.remove('bg-indigo-500/15','border-indigo-500/30','text-indigo-300');
           b.classList.add('bg-neutral-900/50','border-neutral-800','text-neutral-400');
         });
         btn.classList.add('bg-indigo-500/15','border-indigo-500/30','text-indigo-300');
         btn.classList.remove('bg-neutral-900/50','border-neutral-800','text-neutral-400');
-        let v = 0;
-        postCards.forEach(c => {
-          const show = filter === 'All' || c.dataset.category === filter;
-          c.style.display = show ? '' : 'none';
-          if (show) v++;
-        });
-        const empty = document.getElementById('empty-filter-state');
-        if (empty) empty.classList.toggle('hidden', v > 0);
 
-        // PostHog: blog filter applied
+        renderPage();
+
         window.posthog?.capture('blog_filter_applied', {
-          filter_category: filter,
-          visible_posts: v,
+          filter_category: currentFilter,
+          visible_posts: getFilteredCards().length,
         });
       });
     });
-    const io = new IntersectionObserver(
-      e => e.forEach(x => { if (x.isIntersecting) x.target.classList.add('anim-in'); }),
-      { threshold: 0.08 }
-    );
-    document.querySelectorAll('.post-card').forEach(el => {
-      el.classList.add('anim-target'); io.observe(el);
-    });
 
-    
+    // ── Init ────────────────────────────────────────────────────────
+    // Hide all cards initially so renderPage controls display
+    allCards.forEach(c => {
+      c.style.display = 'none';
+      c.classList.add('anim-target');
+    });
+    renderPage();
   </script>
-  
 
   <style>
-    .anim-target { opacity:0; transform:translateY(18px); transition:opacity .5s ease-out,transform .5s ease-out; }
+    .anim-target { opacity:0; transform:translateY(18px); transition:opacity .45s ease-out, transform .45s ease-out; }
     .anim-in    { opacity:1; transform:translateY(0); }
     .line-clamp-3 { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
     @keyframes wave { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.5)} }
