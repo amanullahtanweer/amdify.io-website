@@ -71,10 +71,39 @@ const categoryStripe: Record<string, string> = {
 };
 ---
 
-<Layout 
+<Layout
   title={post.seoTitle || post.title}
   description={post.seoDescription || post.excerpt}
 >
+  <!-- Article Schema Markup -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.seoTitle || post.title,
+    "description": post.seoDescription || post.excerpt,
+    "author": {
+      "@type": "Organization",
+      "name": post.author || "amdify.io Team",
+      "url": "https://www.amdify.io"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "amdify.io",
+      "url": "https://www.amdify.io",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.amdify.io/logo.svg"
+      }
+    },
+    "datePublished": post.createdAt,
+    "dateModified": post.updatedAt || post.createdAt,
+    "url": `https://www.amdify.io/blog/${post.slug}/`,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://www.amdify.io/blog/${post.slug}/`
+    },
+    ...(post.coverImage ? { "image": post.coverImage } : {})
+  })} />
   <!-- Reading progress bar -->
   <div class="fixed top-0 left-0 right-0 z-[60] h-0.5 bg-neutral-900 pointer-events-none">
     <div id="read-progress" class="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 transition-[width] duration-75" style="width:0%"></div>
