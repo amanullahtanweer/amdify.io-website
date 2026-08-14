@@ -8,8 +8,8 @@ interface Props {
 }
 
 const {
-  title = 'amdify.io — AI-Powered Answering Machine Detection',
-  description = 'AI answering machine detection for contact centers. 99% accuracy, zero false positives, integrates with VICIdial & Asterisk.',
+  title = 'AI Answering Machine Detection for VICIdial & Asterisk | amdify.io',
+  description = 'AI-powered answering machine detection (AMD) for VICIdial, Asterisk & GoAutoDial. 98.3% accuracy, sub-200ms detection, zero false positives, no migration required.',
 } = Astro.props;
 ---
 
@@ -32,6 +32,14 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url.href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <link rel="canonical" href={Astro.url.href} />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <!-- Self-hosted Geist font — eliminates Google Fonts render block -->
     <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin />

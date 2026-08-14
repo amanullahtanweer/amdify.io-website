@@ -5,6 +5,95 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
+  <!-- Organization Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "amdify.io",
+    "url": "https://www.amdify.io",
+    "logo": "https://www.amdify.io/logo.svg",
+    "description": "AI-powered answering machine detection (AMD) software for VICIdial, Asterisk, GoAutoDial, and predictive dialers."
+  })} />
+
+  <!-- SoftwareApplication Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "amdify.io AI Answering Machine Detection",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Cloud-based",
+    "description": "AI-powered answering machine detection (AMD) software that integrates with VICIdial, Asterisk, and GoAutoDial. 98.3% accuracy with sub-200ms decisions and zero false positives.",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock"
+    }
+  })} />
+
+  <!-- WebPage Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "AI Answering Machine Detection for VICIdial & Asterisk | amdify.io",
+    "description": "AI-powered AMD software for VICIdial, Asterisk and GoAutoDial. 98.3% accuracy, zero false positives, sub-200ms detection.",
+    "url": "https://www.amdify.io"
+  })} />
+
+  <!-- FAQPage Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Do I need to migrate off my current dialer?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. amdify.io is a bolt-on layer that works with your existing setup. VICIdial, FreePBX, Asterisk, or any SIP-based dialer — we integrate via API in about 15 minutes. No migration, no downtime, no disruption."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How is this different from built-in AMD?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Built-in AMD uses basic audio analysis with rules — it's stuck at ~75-80% accuracy. amdify.io uses a neural network trained on millions of real call recordings. We achieve 98.3% accuracy with sub-200ms decisions, compared to the 2-4 second delays of legacy systems."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What's the free trial include?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Full access to AI-powered AMD detection for 30 days. No credit card required. We also run a comprehensive audit of your current setup and provide a detailed report on improvement opportunities — yours to keep regardless."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is my data secure?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Absolutely. We process audio streams in real-time without storing call recordings. Your data stays on your servers. Our infrastructure is SOC 2 compliant and we support on-premise deployment for enterprise customers."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What kind of ROI can I expect?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Most customers see a 20%+ improvement in connect rates within 30 days and a 30-40% reduction in cost-per-lead within 60 days. The exact ROI depends on your call volume, current connect rates, and agent costs. We provide measurable improvement in 30 days or your money back."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How quickly can I get set up?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "15 minutes to connect your dialer. 24-48 hours for a complete system audit. First optimizations and measurable results within the first week. We handle the heavy lifting — your team just points SIP traffic to our endpoint."
+        }
+      }
+    ]
+  })} />
+
   <!-- ═══════════════════════════ NAVBAR ═══════════════════════════ -->
   <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -78,7 +167,7 @@ import Layout from '../layouts/Layout.astro';
       </h1>
 
       <p class="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-        AI-powered answering machine detection that bolts onto your existing dialer.
+        AI-powered answering machine detection (AMD) that bolts onto VICIdial, Asterisk, or GoAutoDial.
         No migration. No disruption. Results in days.
       </p>
 
