@@ -1,0 +1,14 @@
+
+www.amdify.io {
+    reverse_proxy amdify-website:4321 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
+    encode gzip
+}
+
+amdify.io {
+    redir https://www.amdify.io{uri} permanent
+}

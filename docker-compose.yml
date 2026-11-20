@@ -1,0 +1,29 @@
+services:
+  website:
+    build:
+      context: .
+      args:
+        # Read from /root/amdify-website/.env on the server (compose interpolation).
+        POSTHOG_PROJECT_TOKEN: ${POSTHOG_PROJECT_TOKEN:-}
+        POSTHOG_HOST: ${POSTHOG_HOST:-}
+    image: amdify-website:latest
+    container_name: amdify-website
+    restart: unless-stopped
+    # Read-only like Vercel's filesystem: the /admin and /api/posts write routes have no
+    # auth, so writes must keep failing. Blog posts are published via git + deploy.
+    read_only: true
+    tmpfs:
+      - /tmp
+    ports:
+      - "3002:4321"
+    networks:
+      - default
+      # Joins the existing Caddy network so Caddy can proxy www.amdify.io to
+      # amdify-website:4321. ufw blocks container->host traffic, so a host port
+      # cannot be used as the upstream. This does not modify the grafana stack.
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: grafana_monitoring
